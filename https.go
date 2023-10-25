@@ -222,7 +222,7 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
         var ctx = &ProxyCtx{Req: req, Session: atomic.AddInt64(
           &proxy.sess,
           1,
-				), Proxy: proxy, UserData: ctx.UserData, Authenticated: ctx.Authenticated}
+        ), Proxy: proxy, UserData: ctx.UserData, Authenticated: ctx.Authenticated}
         if err != nil && err != io.EOF {
           return
         }
@@ -256,7 +256,7 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
             }
             return
           }
-          removeProxyHeaders(ctx, req)
+          //removeProxyHeaders(ctx, req)
           resp, err = func() (*http.Response, error) {
             // explicitly discard request body to avoid data races in certain RoundTripper implementations
             // see https://github.com/golang/go/issues/61596#issuecomment-1652345131
