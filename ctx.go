@@ -1,53 +1,55 @@
 package goproxy
 
 import (
-	"crypto/tls"
-	"net/http"
-	"regexp"
+  "crypto/tls"
+  "net/http"
+  "regexp"
 )
 
 // ProxyCtx is the Proxy context, contains useful information about every request. It is passed to
 // every user function. Also used as a logger.
 type ProxyCtx struct {
-	// Will contain the client request from the proxy
-	Req *http.Request
-	// Will contain the remote server's response (if available. nil if the request wasn't send yet)
-	Resp         *http.Response
-	RoundTripper RoundTripper
-	// will contain the recent error that occurred while trying to send receive or parse traffic
-	Error error
-	// A handle for the user to keep data in the context, from the call of ReqHandler to the
-	// call of RespHandler
-	UserData interface{}
-	// Will connect a request to a response
-	Session   int64
-	certStore CertStorage
-	Proxy     *ProxyHttpServer
+  // Will contain the client request from the proxy
+  Req *http.Request
+  // Will contain the remote server's response (if available. nil if the request wasn't send yet)
+  Resp         *http.Response
+  RoundTripper RoundTripper
+  // will contain the recent error that occurred while trying to send receive or parse traffic
+  Error error
+  // A handle for the user to keep data in the context, from the call of ReqHandler to the
+  // call of RespHandler
+  UserData interface{}
+  // Will connect a request to a response
+  Session   int64
+  certStore CertStorage
+  Proxy     *ProxyHttpServer
+  // Will prevent second authentication on the already authenticated requests
+  Authenticated bool
 }
 
 type RoundTripper interface {
-	RoundTrip(req *http.Request, ctx *ProxyCtx) (*http.Response, error)
+  RoundTrip(req *http.Request, ctx *ProxyCtx) (*http.Response, error)
 }
 
 type CertStorage interface {
-	Fetch(hostname string, gen func() (*tls.Certificate, error)) (*tls.Certificate, error)
+  Fetch(hostname string, gen func() (*tls.Certificate, error)) (*tls.Certificate, error)
 }
 
 type RoundTripperFunc func(req *http.Request, ctx *ProxyCtx) (*http.Response, error)
 
 func (f RoundTripperFunc) RoundTrip(req *http.Request, ctx *ProxyCtx) (*http.Response, error) {
-	return f(req, ctx)
+  return f(req, ctx)
 }
 
 func (ctx *ProxyCtx) RoundTrip(req *http.Request) (*http.Response, error) {
-	if ctx.RoundTripper != nil {
-		return ctx.RoundTripper.RoundTrip(req, ctx)
-	}
-	return ctx.Proxy.Tr.RoundTrip(req)
+  if ctx.RoundTripper != nil {
+    return ctx.RoundTripper.RoundTrip(req, ctx)
+  }
+  return ctx.Proxy.Tr.RoundTrip(req)
 }
 
 func (ctx *ProxyCtx) printf(msg string, argv ...interface{}) {
-	ctx.Proxy.Logger.Printf("[%03d] "+msg+"\n", append([]interface{}{ctx.Session & 0xFF}, argv...)...)
+  ctx.Proxy.Logger.Printf("[%03d] "+msg+"\n", append([]interface{}{ctx.Session & 0xFF}, argv...)...)
 }
 
 // Logf prints a message to the proxy's log. Should be used in a ProxyHttpServer's filter
@@ -59,9 +61,9 @@ func (ctx *ProxyCtx) printf(msg string, argv ...interface{}) {
 //		return r, nil
 //	})
 func (ctx *ProxyCtx) Logf(msg string, argv ...interface{}) {
-	if ctx.Proxy.Verbose {
-		ctx.printf("INFO: "+msg, argv...)
-	}
+  if ctx.Proxy.Verbose {
+    ctx.printf("INFO: "+msg, argv...)
+  }
 }
 
 // Warnf prints a message to the proxy's log. Should be used in a ProxyHttpServer's filter
@@ -76,7 +78,7 @@ func (ctx *ProxyCtx) Logf(msg string, argv ...interface{}) {
 //		return r, nil
 //	})
 func (ctx *ProxyCtx) Warnf(msg string, argv ...interface{}) {
-	ctx.printf("WARN: "+msg, argv...)
+  ctx.printf("WARN: "+msg, argv...)
 }
 
 var charsetFinder = regexp.MustCompile("charset=([^ ;]*)")
@@ -85,9 +87,9 @@ var charsetFinder = regexp.MustCompile("charset=([^ ;]*)")
 // Returns the empty string if we don't know which character set it used.
 // Currently it will look for charset=<charset> in the Content-Type header of the request.
 func (ctx *ProxyCtx) Charset() string {
-	charsets := charsetFinder.FindStringSubmatch(ctx.Resp.Header.Get("Content-Type"))
-	if charsets == nil {
-		return ""
-	}
-	return charsets[1]
+  charsets := charsetFinder.FindStringSubmatch(ctx.Resp.Header.Get("Content-Type"))
+  if charsets == nil {
+    return ""
+  }
+  return charsets[1]
 }
